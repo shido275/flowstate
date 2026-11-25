@@ -56,8 +56,57 @@ jobs:
             release/SHA256SUMS.txt
           generate_release_notes: true
 
-  # Opens the microsoft/winget-pkgs update PR for the release that the job above
-  # just published. wingetcreate update can only bump a package that already
+  # A sideloadable debug APK, so nobody has to install the Android SDK to try the
+  # app on a phone. It waits on `windows` on purpose: that job creates the GitHub
+  # release, and this one appends to it. Running both at once makes them race to
+  # create the same tag, which fails with "already_exists".
+  android:
+    needs: windows
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      # AGP 8.13 needs a modern JDK; Capacitor 8 targets 21.
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v3
+      - name: Install the SDK platform the project compiles against
+        run: sdkmanager --install "platforms;android-36" "build-tools;36.0.0"
+
+      - run: npm ci
+      # Sync is build-time configuration, exactly as in the desktop and web builds.
+      - run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      - run: npx cap sync android
+      - run: cd android && chmod +x gradlew && ./gradlew assembleDebug --no-daemon
+
+      - name: Name the APK after the version
+        run: |
+          version=$(node -p "require('./package.json').version")
+          cp android/app/build/outputs/apk/debug/app-debug.apk "Flowstate-$version-debug.apk"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: android-apk
+          path: Flowstate-*-debug.apk
+          if-no-files-found: error
+
+      # The release already exists (the windows job made it), so no
+      # generate_release_notes here: that would rewrite its body.
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: Flowstate-*-debug.apk
+
+  # Opens the microsoft/winget-pkgs update PR for the release that the windows
+  # job just published. wingetcreate update can only bump a package that already
   # exists, so this stays off until the hand-submitted 1.0.0 manifest is merged
   # and the WINGET_SUBMIT repository variable is set to true.
   winget:
