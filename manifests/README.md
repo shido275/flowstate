@@ -10,7 +10,7 @@ manifests/s/Shido275/Flowstate/1.0.0/
   Shido275.Flowstate.locale.en-US.yaml  # listing text
 ```
 
-## What to substitute once the 1.0.0 release exists
+## Before you submit 1.0.0
 
 Every release asset has this shape (electron-builder's `artifactName` plus the tag):
 
@@ -21,11 +21,13 @@ https://github.com/<owner>/<repo>/releases/download/v<version>/Flowstate-Setup-<
 For 1.0.0 that is
 `https://github.com/<owner>/<repo>/releases/download/v1.0.0/Flowstate-Setup-1.0.0.exe`.
 
-1. **`OWNER/REPO`** — five occurrences, all inside URLs (`PackageUrl`,
-   `PublisherUrl`, `PublisherSupportUrl`, `LicenseUrl`, `InstallerUrl`):
+1. **The repository URLs** (`PackageUrl`, `PublisherUrl`, `PublisherSupportUrl`,
+   `LicenseUrl`, `InstallerUrl`) already point at
+   `https://github.com/shido275/flowstate`. If the repository ever moves, rewrite
+   them in one go:
 
    ```bash
-   sed -i 's|OWNER/REPO|<owner>/<repo>|g' manifests/s/Shido275/Flowstate/1.0.0/*.yaml
+   sed -i 's|shido275/flowstate|<owner>/<repo>|g' manifests/s/Shido275/Flowstate/1.0.0/*.yaml
    ```
 
 2. **`REPLACE_WITH_SHA256_FROM_THE_1_0_0_RELEASE`** — the hash of the published
