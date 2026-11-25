@@ -1,0 +1,23 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.installer.1.10.0.schema.json
+PackageIdentifier: Shido275.Flowstate
+PackageVersion: 1.0.0
+InstallerType: nullsoft
+Scope: user
+InstallModes:
+  - interactive
+  - silent
+  - silentWithProgress
+UpgradeBehavior: install
+Installers:
+  - Architecture: x64
+    # Every release has this shape, built by electron-builder's artifactName:
+    # https://github.com/<owner>/<repo>/releases/download/v<version>/Flowstate-Setup-<version>.exe
+    InstallerUrl: https://github.com/OWNER/REPO/releases/download/v1.0.0/Flowstate-Setup-1.0.0.exe
+    # Replace with the hash from the 1.0.0 release's SHA256SUMS.txt. Deliberately
+    # not 64 hex characters so `winget validate` fails if this is submitted as-is.
+    InstallerSha256: REPLACE_WITH_SHA256_FROM_THE_1_0_0_RELEASE
+    InstallerSwitches:
+      Silent: /S
+      SilentWithProgress: /S
+ManifestType: installer
+ManifestVersion: 1.10.0

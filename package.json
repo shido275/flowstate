@@ -1,0 +1,44 @@
+{
+  "name": "flowstate-lyrics",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "license": "MIT",
+  "author": "Flowstate contributors",
+  "description": "A free, open-source, local-first songwriting studio.",
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "tsc --noEmit && npm run typecheck:electron && vite build",
+    "preview": "vite preview --host 0.0.0.0",
+    "typecheck": "tsc --noEmit",
+    "typecheck:electron": "tsc -p electron/tsconfig.json",
+    "test": "vitest run",
+    "android:sync": "npm run build && cap sync android",
+    "android:apk": "npm run android:sync && cd android && ./gradlew assembleDebug",
+    "desktop": "npm run build && electron .",
+    "desktop:installer": "npm run build && electron-builder --win nsis --publish never"
+  },
+  "dependencies": {
+    "@capacitor/core": "^8.6.2",
+    "@fontsource/inter": "^5.1.0",
+    "@fontsource/lora": "^5.1.0",
+    "@supabase/supabase-js": "^2.119.2",
+    "cmu-pronouncing-dictionary": "^3.0.0",
+    "lucide-react": "^0.468.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^8.6.2",
+    "@capacitor/cli": "^8.6.2",
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^45.5.0",
+    "electron-builder": "^26.18.0",
+    "typescript": "~5.6.2",
+    "vite": "^6.0.5",
+    "vitest": "^5.1.1"
+  }
+}

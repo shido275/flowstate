@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=https://aka.ms/winget-manifest.defaultLocale.1.10.0.schema.json
+PackageIdentifier: Shido275.Flowstate
+PackageVersion: 1.0.0
+PackageLocale: en-US
+Publisher: Shido275
+PublisherUrl: https://github.com/OWNER/REPO
+PublisherSupportUrl: https://github.com/OWNER/REPO/issues
+PackageName: Flowstate
+PackageUrl: https://github.com/OWNER/REPO
+License: MIT
+LicenseUrl: https://github.com/OWNER/REPO/blob/main/LICENSE
+Copyright: © 2026 Flowstate contributors
+ShortDescription: A free, open-source, local-first songwriting studio.
+Description: |-
+  Flowstate is a calm place to write lyrics: live rhyme colouring, syllable
+  counts, scansion, a beat grid, section structure, voice takes, an offline beat
+  machine and a booth teleprompter. Everything is stored on the device, so the
+  app works with no account and no network; cloud sync is optional and stays off
+  until you sign in.
+Moniker: flowstate
+Tags:
+  - songwriting
+  - lyrics
+  - writing
+  - music
+  - offline
+ManifestType: defaultLocale
+ManifestVersion: 1.10.0

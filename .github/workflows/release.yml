@@ -1,0 +1,101 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run typecheck:electron
+      # Sync is build-time configuration, exactly as in pages.yml: without these
+      # variables the desktop build is local-only rather than broken.
+      - run: npm run build
+        env:
+          VITE_SUPABASE_URL: ${{ vars.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_PUBLISHABLE_KEY: ${{ vars.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      - run: npx electron-builder --win nsis --publish never
+
+      # The hash a winget manifest needs, printed where it is easy to copy.
+      - name: Checksums
+        shell: pwsh
+        run: |
+          $lines = Get-ChildItem release/*.exe | ForEach-Object {
+            $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
+            "$hash  $($_.Name)"
+          }
+          $lines | Set-Content release/SHA256SUMS.txt -Encoding ascii
+          "### Windows installer SHA-256" | Add-Content $env:GITHUB_STEP_SUMMARY
+          '```' | Add-Content $env:GITHUB_STEP_SUMMARY
+          $lines | Add-Content $env:GITHUB_STEP_SUMMARY
+          '```' | Add-Content $env:GITHUB_STEP_SUMMARY
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          path: |
+            release/*.exe
+            release/SHA256SUMS.txt
+          if-no-files-found: error
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            release/*.exe
+            release/SHA256SUMS.txt
+          generate_release_notes: true
+
+  # Opens the microsoft/winget-pkgs update PR for the release that the job above
+  # just published. wingetcreate update can only bump a package that already
+  # exists, so this stays off until the hand-submitted 1.0.0 manifest is merged
+  # and the WINGET_SUBMIT repository variable is set to true.
+  winget:
+    needs: windows
+    if: vars.WINGET_SUBMIT == 'true'
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve version and installer URL
+        id: target
+        shell: pwsh
+        run: |
+          $version = (Get-Content package.json -Raw | ConvertFrom-Json).version
+          $url = "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/Flowstate-Setup-$version.exe"
+          "version=$version" >> $env:GITHUB_OUTPUT
+          "url=$url" >> $env:GITHUB_OUTPUT
+
+      # wingetcreate has no --sha256 flag, so the printed hash is used to prove
+      # the asset the manifest will point at is the one this release built.
+      - name: Check the published installer against the release SHA-256
+        shell: pwsh
+        run: |
+          $base = "https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}"
+          $expected = ((Invoke-WebRequest "$base/SHA256SUMS.txt").Content.Trim() -split '\s+')[0].ToLower()
+          Invoke-WebRequest "${{ steps.target.outputs.url }}" -OutFile Flowstate-Setup.exe
+          $actual = (Get-FileHash Flowstate-Setup.exe -Algorithm SHA256).Hash.ToLower()
+          if ($actual -ne $expected) { throw "Release asset is $actual, SHA256SUMS.txt says $expected" }
+          Write-Host "verified $actual"
+
+      - name: Open the winget update PR
+        shell: pwsh
+        env:
+          WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
+        run: |
+          Invoke-WebRequest https://aka.ms/wingetcreate/latest -OutFile wingetcreate.exe
+          .\wingetcreate.exe update Shido275.Flowstate `
+            --version "${{ steps.target.outputs.version }}" `
+            --urls "${{ steps.target.outputs.url }}" `
+            --submit `
+            --token "$env:WINGET_TOKEN"
